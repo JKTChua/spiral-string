@@ -8,10 +8,10 @@ class Node {
     this.height = h;
   }
 
-  move(nextPos) {
-    const delta = calcDelta(this.position, nextPos);
+  move(nextPos, prevNode) {
     this.position = nextPos;
     this.children.forEach((n) => {
+      if (n === prevNode) return;
       const d = calcDistance(this.position, n.position);
       if (d >= maxDistance) {
         const closest = calcClosestCirclePoint(
@@ -22,7 +22,7 @@ class Node {
         n.move({
           x: closest.x,
           y: closest.y
-        });
+        }, this);
       }
     });
   }
@@ -57,11 +57,12 @@ function calcDistance(pt1, pt2) {
 }
 
 const x = new Node(spiralPos(0, 10, 4), 10, 10);
-let prevNode = x;
+const allNodes = [x];
 for (let i = 1; i < 200; i++) {
   const newNode = new Node(spiralPos(i, 10, 4));
-  prevNode.children.push(newNode);
-  prevNode = newNode;
+  allNodes[i-1].children.push(newNode);
+  newNode.children.push(allNodes[i-1]);
+  allNodes.push(newNode);
 }
 
 const canvas = document.querySelector('canvas');
@@ -77,7 +78,7 @@ function eraseCanvas(){
 
 function initMouseEvents() {
   const mouseEventProps = {
-    shapes: [x],
+    shapes: allNodes,
     dragok: false
   };
   canvas.onmousedown = myDown.bind(mouseEventProps);
@@ -94,13 +95,12 @@ function drawNodes(arr) {
       n.width,
       n.height
     );
-    drawNodes(n.children);
   });
 }
 
 function draw() {
   eraseCanvas();
-  drawNodes([x]);
+  drawNodes(allNodes);
 }
 
 draw();
